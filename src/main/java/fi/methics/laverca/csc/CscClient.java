@@ -13,6 +13,8 @@ import com.squareup.okhttp.Response;
 
 import fi.methics.laverca.csc.json.auth.CscLoginReq;
 import fi.methics.laverca.csc.json.auth.CscLoginResp;
+import fi.methics.laverca.csc.json.auth.CscRevokeReq;
+import fi.methics.laverca.csc.json.auth.CscRevokeResp;
 import fi.methics.laverca.csc.json.credentials.CscCredentialsAuthorizeReq;
 import fi.methics.laverca.csc.json.credentials.CscCredentialsAuthorizeResp;
 import fi.methics.laverca.csc.json.credentials.CscCredentialsInfoReq;
@@ -90,12 +92,51 @@ public class CscClient {
         }
     }
     
+    
+    /**
+     * Revoke current login
+     * @return Revoke response
+     */
+    public CscRevokeResp authRevoke() {
+        if (this.access_token == null) {
+            throw CscException.createNotLoggedInException();
+        }
+        
+        CscRevokeReq req = new CscRevokeReq();
+        req.token = this.access_token;
+        req.token_type_hint = "access_token";
+        
+        try {
+            String url = this.baseurl+"/csc/v1/auth/revoke";
+            System.out.println("Sending req to " + url);
+            Request  request  = new Request.Builder().url(url)
+                                                     .post(req.toRequestBody())
+                                                     .header("Authorization", "Bearer " + this.access_token)
+                                                     .build();
+            
+            Response response = client.newCall(request).execute();
+            CscRevokeResp loginresp = CscRevokeResp.fromResponse(response, CscRevokeResp.class);
+            
+            this.access_token = null;
+            
+            return loginresp; 
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new CscException(e);
+        } catch (CscException e) {
+            throw e;
+        }
+    }
+    
     /**
      * Authorize signature
      * @param credentialid Credential ID to authorize
      * @return Authorize response
      */
     public CscCredentialsAuthorizeResp authorize(String credentialid) {
+        if (this.access_token == null) {
+            throw CscException.createNotLoggedInException();
+        }
         CscCredentialsAuthorizeReq req = new CscCredentialsAuthorizeReq();
         req.credentialID  = credentialid;
         req.numSignatures = 1;
@@ -124,6 +165,9 @@ public class CscClient {
      * @return Credential info JSON
      */
     public CscCredentialsInfoResp getCredentialInfo(String credentialid) {
+        if (this.access_token == null) {
+            throw CscException.createNotLoggedInException();
+        }
         CscCredentialsInfoReq req = new CscCredentialsInfoReq();
         req.credentialID = credentialid;
         
@@ -176,6 +220,9 @@ public class CscClient {
      * @return Credential list JSON
      */
     public CscCredentialsListResp listCredentials() {
+        if (this.access_token == null) {
+            throw CscException.createNotLoggedInException();
+        }
         CscCredentialsListReq req = new CscCredentialsListReq();
         req.maxResults = 20;
         
@@ -205,6 +252,9 @@ public class CscClient {
      * @return Authorize response
      */
     public CscSignHashResp signHash(String credentialid, String sad, String hash) {
+        if (this.access_token == null) {
+            throw CscException.createNotLoggedInException();
+        }
         CscSignHashReq req = new CscSignHashReq();
         req.credentialID = credentialid;
         req.hash         = Arrays.asList(hash);

@@ -1,7 +1,5 @@
 package fi.methics.laverca.csc;
 
-import java.io.IOException;
-
 import com.squareup.okhttp.Response;
 
 import fi.methics.laverca.csc.json.CscErrorResp;
@@ -10,10 +8,25 @@ public class CscException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
     private CscErrorResp error;
+    private int httpcode = -1;
+    
+    /**
+     * Create an exception that highlights that the {@link CscClient#authLogin()}
+     * must be called first
+     * @return Exception
+     */
+    public static CscException createNotLoggedInException() {
+        CscException ex = new CscException();
+        ex.error = new CscErrorResp();
+        ex.error.error = "client_error";
+        ex.error.error_description = "Client is not logged in";
+        return ex;
+    }
     
     public CscException(Response response) {
         try {
-            this.error = CscErrorResp.fromResponse(response);
+            this.httpcode = response.code();
+            this.error    = CscErrorResp.fromResponse(response);
         } catch (Exception e) {
             this.error = new CscErrorResp();
             error.error = "server_error";
@@ -22,14 +35,30 @@ public class CscException extends RuntimeException {
         }
     }
     
-    public CscException(IOException e) {
+    public CscException(Exception e) {
         this.error = new CscErrorResp();
         error.error = "server_error";
         error.error_description = "Request failed: " + e.getMessage();
     }
 
+    private CscException() {
+        
+    }
+    
+    /**
+     * Get error JSON
+     * @return error JSON if available
+     */
     public CscErrorResp getError() {
         return this.error;
+    }
+    
+    /**
+     * Get HTTP statuscode of the error
+     * @return HTTP statuscode or -1 if not available
+     */
+    public int getHttpStatusCode() {
+        return this.httpcode;
     }
     
 }
