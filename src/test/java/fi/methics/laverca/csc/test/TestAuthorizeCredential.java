@@ -10,10 +10,10 @@ public class TestAuthorizeCredential {
 
     @Test
     public void testAuthorize() {
-        CscClient client = new CscClient.Builder().withBaseUrl("https://14.248.94.18:9011/soap")
+        CscClient client = new CscClient.Builder().withBaseUrl(TestAuth.BASE_URL)
                                                   .withTrustInsecureConnections(true)
-                                                  .withUsername("35847001001")
-                                                  .withPassword("eSIozRZGDA2P")
+                                                  .withUsername(TestAuth.USERNAME)
+                                                  .withPassword(TestAuth.API_KEY)
                                                   .build();
         client.authLogin();
         CscCredentialsListResp    credentials = client.listCredentials();

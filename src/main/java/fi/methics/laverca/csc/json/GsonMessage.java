@@ -1,7 +1,3 @@
-//
-//  (c) Copyright 2003-2021 Methics Technologies Oy. All rights reserved. 
-//
-
 package fi.methics.laverca.csc.json;
 
 import java.io.ByteArrayOutputStream;
@@ -19,7 +15,6 @@ import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 
 import fi.methics.laverca.csc.CscException;
-import fi.methics.laverca.csc.json.info.CscInfoResp;
 
 
 /**

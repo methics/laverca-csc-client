@@ -30,6 +30,13 @@ import fi.methics.laverca.csc.util.AllTrustingTrustManager;
 
 public class CscClient {
 
+    public static final String RSA_WITH_SHA1   = "1.2.840.113549.1.1.5";
+    public static final String RSA_WITH_SHA224 = "1.2.840.113549.1.1.14";
+    public static final String RSA_WITH_SHA256 = "1.2.840.113549.1.1.11";
+    public static final String RSA_WITH_SHA384 = "1.2.840.113549.1.1.12";
+    public static final String RSA_WITH_SHA512 = "1.2.840.113549.1.1.13";
+
+    
     private String baseurl;
     private String username;
     private String password;
@@ -92,6 +99,36 @@ public class CscClient {
         }
     }
     
+    /**
+     * Use refresh_token to refresh login
+     * @return Login response
+     */
+    public CscLoginResp refreshLogin() {
+        CscLoginReq req = new CscLoginReq();
+        req.remeberMe     = true;
+        req.refresh_token = this.refresh_token;
+        
+        try {
+            String url = this.baseurl+"/csc/v1/auth/login";
+            System.out.println("Sending req to " + url);
+            Request  request  = new Request.Builder().url(url)
+                                                     .post(req.toRequestBody())
+                                                     .build();
+            
+            Response response = client.newCall(request).execute();
+            CscLoginResp loginresp = CscLoginResp.fromResponse(response, CscLoginResp.class);
+            
+            this.access_token  = loginresp.access_token;
+            this.refresh_token = loginresp.refresh_token;
+            
+            return loginresp; 
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new CscException(e);
+        } catch (CscException e) {
+            throw e;
+        }
+    }
     
     /**
      * Revoke current login
@@ -247,17 +284,21 @@ public class CscClient {
     /**
      * Sign a hash
      * @param credentialid Credential ID to authorize
-     * @param sad
-     * @param hash         Hash to sign
+     * @param sad      Signature Activation Data (from authorize response)
+     * @param hash     Hash to sign
+     * @param signAlgo Signature Algorithm (Use e.g. {@link CscClient#RSA_WITH_SHA256})
+     * @param hashAlgo Signature hash algorithm. Optional.
      * @return Authorize response
      */
-    public CscSignHashResp signHash(String credentialid, String sad, String hash) {
+    public CscSignHashResp signHash(String credentialid, String sad, String hash, String signAlgo, String hashAlgo) {
         if (this.access_token == null) {
             throw CscException.createNotLoggedInException();
         }
         CscSignHashReq req = new CscSignHashReq();
         req.credentialID = credentialid;
         req.hash         = Arrays.asList(hash);
+        req.signAlgo     = signAlgo;
+        req.hashAlgo     = hashAlgo;
         req.SAD          = sad;
         
         try {
@@ -276,6 +317,29 @@ public class CscClient {
         } catch (CscException e) {
             throw e;
         }
+    }
+    
+    /**
+     * Sign a hash
+     * @param credentialid Credential ID to authorize
+     * @param sad      Signature Activation Data (from authorize response)
+     * @param hash     Hash to sign
+     * @param signAlgo Signature Algorithm (Use e.g. {@link CscClient#RSA_WITH_SHA256})
+     * @return Authorize response
+     */
+    public CscSignHashResp signHash(String credentialid, String sad, String hash, String signAlgo) {
+        return this.signHash(credentialid, sad, hash, signAlgo, null);
+    }
+    
+    /**
+     * Sign a SHA-256 hash
+     * @param credentialid Credential ID to authorize
+     * @param sad      Signature Activation Data (from authorize response)
+     * @param hash     Hash to sign
+     * @return Authorize response
+     */
+    public CscSignHashResp signHash(String credentialid, String sad, String hash) {
+        return this.signHash(credentialid, sad, hash, CscClient.RSA_WITH_SHA256, null);
     }
     
     public static class Builder {
