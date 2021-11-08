@@ -150,4 +150,12 @@ public class CscCredentialsInfoResp extends GsonMessage {
         public String description;
     }
     
+    /**
+     * Does the response indicate that we should use SCAL2?
+     * @return true for SCAL2
+     */
+    public boolean isScal2() {
+        return "2".equals(this.SCAL);
+    }
+    
 }

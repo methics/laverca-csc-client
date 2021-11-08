@@ -1,7 +1,7 @@
 package fi.methics.laverca.csc;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.List;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -28,6 +28,10 @@ import fi.methics.laverca.csc.json.signatures.CscSignHashResp;
 import fi.methics.laverca.csc.util.AllTrustingHostnameVerifier;
 import fi.methics.laverca.csc.util.AllTrustingTrustManager;
 
+/**
+ * CSC Client class. This is used to communicate with an RSSP.
+ * This class is not thread safe as it stores variables like access_token and refresh_token. 
+ */
 public class CscClient {
 
     public static final String RSA_WITH_SHA1   = "1.2.840.113549.1.1.5";
@@ -45,6 +49,8 @@ public class CscClient {
     
     private String access_token;
     private String refresh_token;
+    private CscCredentialsAuthorizeResp authorize;
+    private boolean isScal2 = false;
     
     protected CscClient(String baseurl, 
                         String username, 
@@ -53,7 +59,6 @@ public class CscClient {
         this.baseurl  = baseurl;
         this.username = username;
         this.password = password;
-        
         
         this.client = new OkHttpClient();
         if (trustall) {
@@ -166,17 +171,38 @@ public class CscClient {
     }
     
     /**
-     * Authorize signature
+     * Explicitly authorize signature in SCAL1 mode.
+     * 
+     * <p>This can optionally called before {@link #signHash(String, List, String)}.
+     * If no valid authorize response is found, signHash automatically calls this again.
+     * 
      * @param credentialid Credential ID to authorize
      * @return Authorize response
      */
     public CscCredentialsAuthorizeResp authorize(String credentialid) {
+        if (this.isScal2) {
+            throw CscException.createMissingParamException("hash");
+        }
+        return this.authorize(credentialid, null);
+    }
+    
+    /**
+     * Explicitly authorize signature in SCAL2 mode.
+     * 
+     * <p>This can optionally called before {@link #signHash(String, List, String)}.
+     * If no valid authorize response is found, signHash automatically calls this again.
+     * 
+     * @param credentialid Credential ID to authorize
+     * @return Authorize response
+     */
+    public CscCredentialsAuthorizeResp authorize(String credentialid, List<String> hash) {
         if (this.access_token == null) {
             throw CscException.createNotLoggedInException();
         }
         CscCredentialsAuthorizeReq req = new CscCredentialsAuthorizeReq();
         req.credentialID  = credentialid;
-        req.numSignatures = 1;
+        req.numSignatures = hash != null ? hash.size() : 1;
+        req.hash          = hash;
         
         try {
             String url = this.baseurl+"/csc/v1/credentials/authorize";
@@ -187,7 +213,9 @@ public class CscClient {
                                                      .build();
             
             Response response = client.newCall(request).execute();
-            return CscCredentialsAuthorizeResp.fromResponse(response, CscCredentialsAuthorizeResp.class);
+            CscCredentialsAuthorizeResp authorize = CscCredentialsAuthorizeResp.fromResponse(response, CscCredentialsAuthorizeResp.class);
+            this.authorize = authorize;
+            return authorize;
         } catch (IOException e) {
             e.printStackTrace();
             throw new CscException(e);
@@ -217,7 +245,11 @@ public class CscClient {
                                                      .build();
             
             Response response = client.newCall(request).execute();
-            return CscCredentialsInfoResp.fromResponse(response, CscCredentialsInfoResp.class);
+            CscCredentialsInfoResp info = CscCredentialsInfoResp.fromResponse(response, CscCredentialsInfoResp.class);
+            if ("2".equals(info.SCAL)) {
+                this.isScal2 = true;
+            }
+            return info;
         } catch (IOException e) {
             e.printStackTrace();
             throw new CscException(e);
@@ -273,33 +305,34 @@ public class CscClient {
             
             Response response = client.newCall(request).execute();
             return CscCredentialsListResp.fromResponse(response, CscCredentialsListResp.class);
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new CscException(e);
         } catch (CscException e) {
             throw e;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new CscException(e);
         }
     }
     
     /**
-     * Sign a hash
+     * Sign a list of hashes
+     * 
      * @param credentialid Credential ID to authorize
-     * @param sad      Signature Activation Data (from authorize response)
-     * @param hash     Hash to sign
-     * @param signAlgo Signature Algorithm (Use e.g. {@link CscClient#RSA_WITH_SHA256})
-     * @param hashAlgo Signature hash algorithm. Optional.
+     * @param authorize Authorize response with Signature Activation Data
+     * @param hash      Hashes to sign
+     * @param signAlgo  Signature Algorithm (Use e.g. {@link CscClient#RSA_WITH_SHA256})
+     * @param hashAlgo  Signature hash algorithm. Optional.
      * @return Authorize response
      */
-    public CscSignHashResp signHash(String credentialid, String sad, String hash, String signAlgo, String hashAlgo) {
+    public CscSignHashResp signHash(String credentialid, CscCredentialsAuthorizeResp authorize, List<String> hash, String signAlgo, String hashAlgo) {
         if (this.access_token == null) {
             throw CscException.createNotLoggedInException();
         }
         CscSignHashReq req = new CscSignHashReq();
         req.credentialID = credentialid;
-        req.hash         = Arrays.asList(hash);
+        req.hash         = hash;
         req.signAlgo     = signAlgo;
         req.hashAlgo     = hashAlgo;
-        req.SAD          = sad;
+        req.SAD          = authorize.SAD;
         
         try {
             String url = this.baseurl+"/csc/v1/signatures/signHash";
@@ -318,29 +351,37 @@ public class CscClient {
             throw e;
         }
     }
+
+    /**
+     * Sign a list of hashes
+     * 
+     * @param credentialid Credential ID to authorize
+     * @param authorize Authorize response with Signature Activation Data
+     * @param hash     Hash to sign
+     * @param signAlgo Signature Algorithm (Use e.g. {@link CscClient#RSA_WITH_SHA256})
+     * @param hashAlgo  Signature hash algorithm. Optional.
+     * @return Authorize response
+     */
+    public CscSignHashResp signHash(String credentialid, List<String> hash, String signAlgo, String hashAlgo) {
+        if (this.authorize == null || this.authorize.isExpired()) {
+            this.authorize(credentialid, hash);
+        }
+        return this.signHash(credentialid, this.authorize, hash, signAlgo, hashAlgo);
+    }
     
     /**
-     * Sign a hash
+     * Sign a list of hashes
+     * 
      * @param credentialid Credential ID to authorize
-     * @param sad      Signature Activation Data (from authorize response)
+     * @param authorize Authorize response with Signature Activation Data
      * @param hash     Hash to sign
      * @param signAlgo Signature Algorithm (Use e.g. {@link CscClient#RSA_WITH_SHA256})
      * @return Authorize response
      */
-    public CscSignHashResp signHash(String credentialid, String sad, String hash, String signAlgo) {
-        return this.signHash(credentialid, sad, hash, signAlgo, null);
+    public CscSignHashResp signHash(String credentialid, List<String> hash, String signAlgo) {
+        return this.signHash(credentialid, hash, signAlgo, null);
     }
     
-    /**
-     * Sign a SHA-256 hash
-     * @param credentialid Credential ID to authorize
-     * @param sad      Signature Activation Data (from authorize response)
-     * @param hash     Hash to sign
-     * @return Authorize response
-     */
-    public CscSignHashResp signHash(String credentialid, String sad, String hash) {
-        return this.signHash(credentialid, sad, hash, CscClient.RSA_WITH_SHA256, null);
-    }
     
     public static class Builder {
 

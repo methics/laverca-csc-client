@@ -1,5 +1,7 @@
 package fi.methics.laverca.csc.json.credentials;
 
+import java.time.Instant;
+
 import com.google.gson.annotations.SerializedName;
 
 import fi.methics.laverca.csc.json.GsonMessage;
@@ -13,10 +15,25 @@ import fi.methics.laverca.csc.json.GsonMessage;
  */
 public class CscCredentialsAuthorizeResp extends GsonMessage {
 
+    private Instant creationTime;
+    
     @SerializedName("SAD")
     public String SAD;
     
     @SerializedName("expiresIn")
     public Integer expiresIn;
+    
+    public CscCredentialsAuthorizeResp() {
+        this.creationTime = Instant.now();
+    }
+    
+    /**
+     * Check if this authorize response is expired
+     * @return
+     */
+    public boolean isExpired() {
+        if (this.expiresIn == null) return false; // No way to know
+        return Instant.now().minusSeconds(this.expiresIn.intValue()).isAfter(creationTime);
+    }
     
 }

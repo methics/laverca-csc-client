@@ -22,6 +22,18 @@ public class CscException extends RuntimeException {
         ex.error.error_description = "Client is not logged in";
         return ex;
     }
+    /**
+     * Create an exception that highlights that the request is missing a parameter
+     * @param param Name of missing parameter
+     * @return Exception
+     */
+    public static CscException createMissingParamException(String param) {
+        CscException ex = new CscException();
+        ex.error = new CscErrorResp();
+        ex.error.error = "client_error";
+        ex.error.error_description = "Missing parameter " + param;
+        return ex;
+    }
     
     public CscException(Response response) {
         try {
