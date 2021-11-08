@@ -30,7 +30,19 @@ import fi.methics.laverca.csc.util.AllTrustingTrustManager;
 
 /**
  * CSC Client class. This is used to communicate with an RSSP.
- * This class is not thread safe as it stores variables like access_token and refresh_token. 
+ * This class is not thread safe as it stores variables like access_token and refresh_token.
+ * 
+ * <p>Usage example:
+ * <pre>{@code 
+ * CscClient client = new CscClient.Builder().withBaseUrl(BASE_URL)
+ *                                           .withUsername(USERNAME)
+ *                                           .withPassword(API_KEY)
+ *                                            .build();
+ * client.authLogin();
+ * CscCredentialsListRes credentials = client.listCredentials();
+ * CscSignHashResp          signhash = client.signHash(credentials.credentialIDs.get(0), Arrays.asList(SHA256_HASH), CscClient.RSA_WITH_SHA256);
+ * String signature = signHash.signatures.get(0);
+ * }</pre>
  */
 public class CscClient {
 
