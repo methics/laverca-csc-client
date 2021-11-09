@@ -95,7 +95,6 @@ public class CscClient {
         
         try {
             String url = this.baseurl+"/csc/v1/auth/login";
-            System.out.println("Sending req to " + url);
             Request  request  = new Request.Builder().url(url)
                                                      .post(req.toRequestBody())
                                                      .header("Authorization", Credentials.basic(this.username, this.password))
@@ -127,7 +126,6 @@ public class CscClient {
         
         try {
             String url = this.baseurl+"/csc/v1/auth/login";
-            System.out.println("Sending req to " + url);
             Request  request  = new Request.Builder().url(url)
                                                      .post(req.toRequestBody())
                                                      .build();
@@ -162,7 +160,6 @@ public class CscClient {
         
         try {
             String url = this.baseurl+"/csc/v1/auth/revoke";
-            System.out.println("Sending req to " + url);
             Request  request  = new Request.Builder().url(url)
                                                      .post(req.toRequestBody())
                                                      .header("Authorization", "Bearer " + this.access_token)
@@ -218,7 +215,6 @@ public class CscClient {
         
         try {
             String url = this.baseurl+"/csc/v1/credentials/authorize";
-            System.out.println("Sending req to " + url);
             Request  request  = new Request.Builder().url(url)
                                                      .post(req.toRequestBody())
                                                      .header("Authorization", "Bearer " + this.access_token)
@@ -250,7 +246,6 @@ public class CscClient {
         
         try {
             String url = this.baseurl+"/csc/v1/credentials/info";
-            System.out.println("Sending req to " + url);
             Request  request  = new Request.Builder().url(url)
                                                      .post(req.toRequestBody())
                                                      .header("Authorization", "Bearer " + this.access_token)
@@ -283,7 +278,6 @@ public class CscClient {
         
         try {
             String url = this.baseurl+"/csc/v1/info";
-            System.out.println("Sending req to " + url);
             Request  request  = new Request.Builder().url(url).post(req.toRequestBody()).build();
             Response response = client.newCall(request).execute();
             
@@ -309,7 +303,6 @@ public class CscClient {
         
         try {
             String url = this.baseurl+"/csc/v1/credentials/list";
-            System.out.println("Sending req to " + url);
             Request  request  = new Request.Builder().url(url)
                                                      .post(req.toRequestBody())
                                                      .header("Authorization", "Bearer " + this.access_token)
@@ -348,7 +341,6 @@ public class CscClient {
         
         try {
             String url = this.baseurl+"/csc/v1/signatures/signHash";
-            System.out.println("Sending req to " + url);
             Request  request  = new Request.Builder().url(url)
                                                      .post(req.toRequestBody())
                                                      .header("Authorization", "Bearer " + this.access_token)

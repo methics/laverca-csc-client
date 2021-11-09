@@ -8,13 +8,9 @@ import fi.methics.laverca.csc.json.auth.CscLoginResp;
 
 public class TestAuth {
 
-    //public static final String BASE_URL = "https://14.248.94.18:9011/soap";
-    //public static final String USERNAME = "35847001001";
-    //public static final String API_KEY  = "eSIozRZGDA2P";
-    
-    public static final String BASE_URL = "https://localhost:9011/soap";
+    public static final String BASE_URL = "https://demo.methics.fi";
     public static final String USERNAME = "35847001001";
-    public static final String API_KEY  = "vYeEUIk8tzkh";
+    public static final String API_KEY  = "E6v31rAxWoY7";
     
     @Test
     public void testAuthLogin() {

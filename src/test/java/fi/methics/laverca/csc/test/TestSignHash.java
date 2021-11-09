@@ -60,13 +60,7 @@ public class TestSignHash {
                                                   .build();
         client.authLogin();
         CscCredentialsListResp    credentials = client.listCredentials();
-        CscCredentialsInfoResp    info        = client.getCredentialInfo(credentials.credentialIDs.get(0));
-        CscCredentialsAuthorizeResp authorize = null;
-        if (info.isScal2()) {
-            authorize = client.authorize(credentials.credentialIDs.get(0), MULTI_SHA_256_HASH);
-        } else {
-            authorize = client.authorize(credentials.credentialIDs.get(0));
-        }
+        CscCredentialsAuthorizeResp authorize = client.authorize(credentials.credentialIDs.get(0), MULTI_SHA_256_HASH);
         
         CscSignHashResp signhash = client.signHash(credentials.credentialIDs.get(0), authorize, MULTI_SHA_256_HASH, CscClient.RSA_WITH_SHA256, null);
         

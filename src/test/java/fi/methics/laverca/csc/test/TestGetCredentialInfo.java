@@ -17,7 +17,6 @@ public class TestGetCredentialInfo {
                                                   .build();
         client.authLogin();
         CscCredentialsListResp credentials    = client.listCredentials();
-        System.out.println("/credentials/list: " + credentials);
         CscCredentialsInfoResp credentialInfo = client.getCredentialInfo(credentials.credentialIDs.get(0));
         Assertions.assertNotNull(credentialInfo.cert, "cert");
     }
