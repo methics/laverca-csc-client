@@ -91,7 +91,7 @@ public class CscClient {
      */
     public CscLoginResp authLogin() {
         CscLoginReq req = new CscLoginReq();
-        req.remeberMe = true;
+        req.rememberMe = true;
         
         try {
             String url = this.baseurl+"/csc/v1/auth/login";
@@ -121,7 +121,7 @@ public class CscClient {
      */
     public CscLoginResp refreshLogin() {
         CscLoginReq req = new CscLoginReq();
-        req.remeberMe     = true;
+        req.rememberMe     = true;
         req.refresh_token = this.refresh_token;
         
         try {

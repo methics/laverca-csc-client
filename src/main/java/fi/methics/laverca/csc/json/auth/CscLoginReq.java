@@ -16,8 +16,8 @@ public class CscLoginReq extends GsonMessage {
     @SerializedName("refresh_token")
     public String refresh_token;
     
-    @SerializedName("remeberMe")
-    public boolean remeberMe;
+    @SerializedName("rememberMe")
+    public boolean rememberMe;
     
     @SerializedName("clientData")
     public String clientData;
