@@ -2,6 +2,7 @@ package fi.methics.laverca.csc;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -73,6 +74,10 @@ public class CscClient {
         this.password = password;
         
         this.client = new OkHttpClient();
+        this.client.setConnectTimeout(60, TimeUnit.SECONDS);
+        this.client.setReadTimeout(60,    TimeUnit.SECONDS);
+        this.client.setWriteTimeout(60,   TimeUnit.SECONDS);
+
         if (trustall) {
             try {
                 SSLContext sslContext = SSLContext.getInstance("SSL");
