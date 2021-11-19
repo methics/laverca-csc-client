@@ -33,8 +33,11 @@ public class TestSignHash {
                                                   .withPassword(TestAuth.API_KEY)
                                                   .build();
         client.authLogin();
-        CscCredentialsListResp    credentials = client.listCredentials();
-        CscCredentialsInfoResp    info        = client.getCredentialInfo(credentials.credentialIDs.get(0));
+        CscCredentialsListResp credentials = client.listCredentials();
+        Assertions.assertTrue(credentials.credentialIDs.size() > 0, "At least one credential was returned");
+
+        
+        CscCredentialsInfoResp info = client.getCredentialInfo(credentials.credentialIDs.get(0));
         CscCredentialsAuthorizeResp authorize = null;
         if (info.isScal2()) {
             authorize = client.authorize(credentials.credentialIDs.get(0), SHA_256_HASH);
@@ -60,9 +63,10 @@ public class TestSignHash {
                                                   .build();
         client.authLogin();
         CscCredentialsListResp    credentials = client.listCredentials();
+        Assertions.assertTrue(credentials.credentialIDs.size() > 0, "At least one credential was returned");
+
         CscCredentialsAuthorizeResp authorize = client.authorize(credentials.credentialIDs.get(0), MULTI_SHA_256_HASH);
-        
-        CscSignHashResp signhash = client.signHash(credentials.credentialIDs.get(0), authorize, MULTI_SHA_256_HASH, CscClient.RSA_WITH_SHA256, null);
+        CscSignHashResp              signhash = client.signHash(credentials.credentialIDs.get(0), authorize, MULTI_SHA_256_HASH, CscClient.RSA_WITH_SHA256, null);
         
         Assertions.assertNotNull(signhash.signatures,        "signatures");
         Assertions.assertNotNull(signhash.signatures.get(0), "signature1");
@@ -80,8 +84,10 @@ public class TestSignHash {
                                                   .withPassword(TestAuth.API_KEY)
                                                   .build();
         client.authLogin();
-        CscCredentialsListResp    credentials = client.listCredentials();
-        CscCredentialsInfoResp    info        = client.getCredentialInfo(credentials.credentialIDs.get(0));
+        CscCredentialsListResp credentials = client.listCredentials();
+        Assertions.assertTrue(credentials.credentialIDs.size() > 0, "At least one credential was returned");
+
+        CscCredentialsInfoResp info = client.getCredentialInfo(credentials.credentialIDs.get(0));
         if (!info.isScal2()) {
             System.out.println("Credential is not SCAL2. Ignoring.");
             return;
@@ -105,8 +111,10 @@ public class TestSignHash {
                                                   .withPassword(TestAuth.API_KEY)
                                                   .build();
         client.authLogin();
-        CscCredentialsListResp    credentials = client.listCredentials();
-        CscSignHashResp              signhash = client.signHash(credentials.credentialIDs.get(0), SHA_1_HASH, CscClient.RSA_WITH_SHA1);
+        CscCredentialsListResp credentials = client.listCredentials();
+        Assertions.assertTrue(credentials.credentialIDs.size() > 0, "At least one credential was returned");
+
+        CscSignHashResp signhash = client.signHash(credentials.credentialIDs.get(0), SHA_1_HASH, CscClient.RSA_WITH_SHA1);
         
         Assertions.assertNotNull(signhash.signatures,       "signatures");
         Assertions.assertNotNull(signhash.signatures.get(0), "signature");
@@ -123,8 +131,10 @@ public class TestSignHash {
                                                   .withPassword(TestAuth.API_KEY)
                                                   .build();
         client.authLogin();
-        CscCredentialsListResp    credentials = client.listCredentials();
-        CscSignHashResp              signhash = client.signHash(credentials.credentialIDs.get(0), SHA_256_HASH, CscClient.RSA_WITH_SHA256);
+        CscCredentialsListResp credentials = client.listCredentials();
+        Assertions.assertTrue(credentials.credentialIDs.size() > 0, "At least one credential was returned");
+
+        CscSignHashResp signhash = client.signHash(credentials.credentialIDs.get(0), SHA_256_HASH, CscClient.RSA_WITH_SHA256);
         
         Assertions.assertNotNull(signhash.signatures,       "signatures");
         Assertions.assertNotNull(signhash.signatures.get(0), "signature");
@@ -141,8 +151,10 @@ public class TestSignHash {
                                                   .withPassword(TestAuth.API_KEY)
                                                   .build();
         client.authLogin();
-        CscCredentialsListResp    credentials = client.listCredentials();
-        CscSignHashResp              signhash = client.signHash(credentials.credentialIDs.get(0), SHA_384_HASH, CscClient.RSA_WITH_SHA384);
+        CscCredentialsListResp credentials = client.listCredentials();
+        Assertions.assertTrue(credentials.credentialIDs.size() > 0, "At least one credential was returned");
+
+        CscSignHashResp signhash = client.signHash(credentials.credentialIDs.get(0), SHA_384_HASH, CscClient.RSA_WITH_SHA384);
         
         Assertions.assertNotNull(signhash.signatures,       "signatures");
         Assertions.assertNotNull(signhash.signatures.get(0), "signature");
@@ -159,8 +171,10 @@ public class TestSignHash {
                                                   .withPassword(TestAuth.API_KEY)
                                                   .build();
         client.authLogin();
-        CscCredentialsListResp    credentials = client.listCredentials();
-        CscSignHashResp              signhash = client.signHash(credentials.credentialIDs.get(0), SHA_512_HASH, CscClient.RSA_WITH_SHA512);
+        CscCredentialsListResp credentials = client.listCredentials();
+        Assertions.assertTrue(credentials.credentialIDs.size() > 0, "At least one credential was returned");
+        
+        CscSignHashResp signhash = client.signHash(credentials.credentialIDs.get(0), SHA_512_HASH, CscClient.RSA_WITH_SHA512);
         
         Assertions.assertNotNull(signhash.signatures,       "signatures");
         Assertions.assertNotNull(signhash.signatures.get(0), "signature");

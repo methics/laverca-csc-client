@@ -19,8 +19,10 @@ public class TestAuthorizeCredential {
                                                   .withPassword(TestAuth.API_KEY)
                                                   .build();
         client.authLogin();
-        CscCredentialsListResp    credentials = client.listCredentials();
-        CscCredentialsInfoResp    info        = client.getCredentialInfo(credentials.credentialIDs.get(0));
+        CscCredentialsListResp credentials = client.listCredentials();
+        Assertions.assertTrue(credentials.credentialIDs.size() > 0, "At least one credential was returned");
+        
+        CscCredentialsInfoResp info = client.getCredentialInfo(credentials.credentialIDs.get(0));
         CscCredentialsAuthorizeResp authorize;
         if (info.isScal2()) {
             authorize = client.authorize(credentials.credentialIDs.get(0), Arrays.asList("DUMMY_HASH"));

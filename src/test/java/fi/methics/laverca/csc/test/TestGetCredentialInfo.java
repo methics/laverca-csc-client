@@ -16,7 +16,9 @@ public class TestGetCredentialInfo {
                                                   .withPassword(TestAuth.API_KEY)
                                                   .build();
         client.authLogin();
-        CscCredentialsListResp credentials    = client.listCredentials();
+        CscCredentialsListResp credentials = client.listCredentials();
+        Assertions.assertTrue(credentials.credentialIDs.size() > 0, "At least one credential was returned");
+
         CscCredentialsInfoResp credentialInfo = client.getCredentialInfo(credentials.credentialIDs.get(0));
         Assertions.assertNotNull(credentialInfo.cert, "cert");
     }
