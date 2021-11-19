@@ -1,4 +1,4 @@
-# laverca-csc-client
+# Laverca CSC client
 Simple Java client for CSC v1.0.4.0 API
 
 The project supports the following CSC API end points:
