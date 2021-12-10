@@ -1,5 +1,5 @@
 # Laverca CSC client
-Simple Java client for CSC v1.0.4.0 API
+Simple Java client for Cloud Signature Consortium v1.0.4.0 API
 
 The project supports the following CSC API end points:
 - /info
