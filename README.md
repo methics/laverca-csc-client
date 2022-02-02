@@ -36,6 +36,8 @@ CscClient client = new CscClient.Builder().withBaseUrl(BASE_URL)
                                           .build();
 client.authLogin();
 CscCredentialsListRes credentials = client.listCredentials();
-CscSignHashResp          signhash = client.signHash(credentials.credentialIDs.get(0), Arrays.asList(SHA256_HASH), CscClient.RSA_WITH_SHA256);
-String                  signature = signHash.signatures.get(0);
+CscSignHashResp          signhash = client.signHash(credentials.credentialIDs.get(0), 
+                                                    Arrays.asList(SHA256_HASH), 
+                                                    CscClient.RSA_WITH_SHA256);
+String signature = signHash.signatures.get(0);
 ```
