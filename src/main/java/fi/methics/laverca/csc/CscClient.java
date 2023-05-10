@@ -54,7 +54,8 @@ public class CscClient {
     public static final String RSA_WITH_SHA512 = "1.2.840.113549.1.1.13";
 
     
-    private String baseurl;
+    private String baseUrl;
+    private String secondaryUrl;
     private String username;
     private String password;
     
@@ -65,13 +66,24 @@ public class CscClient {
     private CscCredentialsAuthorizeResp authorize;
     private boolean isScal2 = false;
     
-    protected CscClient(String baseurl, 
+    protected CscClient(String baseUrl,
                         String username, 
                         String password,
-                        boolean trustall) {
-        this.baseurl  = baseurl;
-        this.username = username;
-        this.password = password;
+                        boolean trustall) 
+    {
+        this(baseUrl, null, username, password, trustall);
+    }
+    
+    protected CscClient(String baseUrl,
+                        String secondaryUrl,
+                        String username, 
+                        String password,
+                        boolean trustall) 
+    {
+        this.baseUrl      = baseUrl;
+        this.secondaryUrl = secondaryUrl;
+        this.username     = username;
+        this.password     = password;
         
         this.client = new OkHttpClient();
         this.client.setConnectTimeout(60, TimeUnit.SECONDS);
@@ -85,7 +97,7 @@ public class CscClient {
                 this.client.setSslSocketFactory(sslContext.getSocketFactory());
                 this.client.setHostnameVerifier(new AllTrustingHostnameVerifier());
             } catch (Exception e) {
-                e.printStackTrace();
+                throw new CscException(e);
             }
         }
     }
@@ -98,14 +110,13 @@ public class CscClient {
         CscLoginReq req = new CscLoginReq();
         req.rememberMe = true;
         
+        String service = "/csc/v1/auth/login";
+        Request.Builder request = new Request.Builder()
+                .post(req.toRequestBody())
+                .header("Authorization", Credentials.basic(this.username, this.password));
+        
         try {
-            String url = this.baseurl+"/csc/v1/auth/login";
-            Request  request  = new Request.Builder().url(url)
-                                                     .post(req.toRequestBody())
-                                                     .header("Authorization", Credentials.basic(this.username, this.password))
-                                                     .build();
-            
-            Response response = client.newCall(request).execute();
+            Response response = sendRequest(request, service);
             CscLoginResp loginresp = CscLoginResp.fromResponse(response, CscLoginResp.class);
             
             this.access_token  = loginresp.access_token;
@@ -113,7 +124,6 @@ public class CscClient {
             
             return loginresp; 
         } catch (IOException e) {
-            e.printStackTrace();
             throw new CscException(e);
         } catch (CscException e) {
             throw e;
@@ -126,16 +136,16 @@ public class CscClient {
      */
     public CscLoginResp refreshLogin() {
         CscLoginReq req = new CscLoginReq();
-        req.rememberMe     = true;
+        req.rememberMe    = true;
         req.refresh_token = this.refresh_token;
         
+        String service = "/csc/v1/auth/login";
+        Request.Builder request = new Request.Builder()
+                .post(req.toRequestBody());
+        
         try {
-            String url = this.baseurl+"/csc/v1/auth/login";
-            Request  request  = new Request.Builder().url(url)
-                                                     .post(req.toRequestBody())
-                                                     .build();
             
-            Response response = client.newCall(request).execute();
+            Response response = sendRequest(request, service);
             CscLoginResp loginresp = CscLoginResp.fromResponse(response, CscLoginResp.class);
             
             this.access_token  = loginresp.access_token;
@@ -143,7 +153,6 @@ public class CscClient {
             
             return loginresp; 
         } catch (IOException e) {
-            e.printStackTrace();
             throw new CscException(e);
         } catch (CscException e) {
             throw e;
@@ -164,20 +173,18 @@ public class CscClient {
         req.token_type_hint = "access_token";
         
         try {
-            String url = this.baseurl+"/csc/v1/auth/revoke";
-            Request  request  = new Request.Builder().url(url)
-                                                     .post(req.toRequestBody())
-                                                     .header("Authorization", "Bearer " + this.access_token)
-                                                     .build();
+            String service = "/csc/v1/auth/revoke";
+            Request.Builder request = new Request.Builder()
+                    .post(req.toRequestBody())
+                    .header("Authorization", "Bearer " + this.access_token);
             
-            Response response = client.newCall(request).execute();
+            Response response = sendRequest(request, service);
             CscRevokeResp loginresp = CscRevokeResp.fromResponse(response, CscRevokeResp.class);
             
             this.access_token = null;
             
             return loginresp; 
         } catch (IOException e) {
-            e.printStackTrace();
             throw new CscException(e);
         } catch (CscException e) {
             throw e;
@@ -219,18 +226,16 @@ public class CscClient {
         req.hash          = hash;
         
         try {
-            String url = this.baseurl+"/csc/v1/credentials/authorize";
-            Request  request  = new Request.Builder().url(url)
-                                                     .post(req.toRequestBody())
-                                                     .header("Authorization", "Bearer " + this.access_token)
-                                                     .build();
+            String service = "/csc/v1/credentials/authorize";
+            Request.Builder request = new Request.Builder()
+                    .post(req.toRequestBody())
+                    .header("Authorization", "Bearer " + this.access_token);
             
-            Response response = client.newCall(request).execute();
+            Response response = sendRequest(request, service);
             CscCredentialsAuthorizeResp authorize = CscCredentialsAuthorizeResp.fromResponse(response, CscCredentialsAuthorizeResp.class);
             this.authorize = authorize;
             return authorize;
         } catch (IOException e) {
-            e.printStackTrace();
             throw new CscException(e);
         } catch (CscException e) {
             throw e;
@@ -250,20 +255,18 @@ public class CscClient {
         req.credentialID = credentialid;
         
         try {
-            String url = this.baseurl+"/csc/v1/credentials/info";
-            Request  request  = new Request.Builder().url(url)
-                                                     .post(req.toRequestBody())
-                                                     .header("Authorization", "Bearer " + this.access_token)
-                                                     .build();
+            String service = "/csc/v1/credentials/info";
+            Request.Builder request = new Request.Builder()
+                    .post(req.toRequestBody())
+                    .header("Authorization", "Bearer " + this.access_token);
             
-            Response response = client.newCall(request).execute();
+            Response response = sendRequest(request, service);
             CscCredentialsInfoResp info = CscCredentialsInfoResp.fromResponse(response, CscCredentialsInfoResp.class);
             if ("2".equals(info.SCAL)) {
                 this.isScal2 = true;
             }
             return info;
         } catch (IOException e) {
-            e.printStackTrace();
             throw new CscException(e);
         } catch (CscException e) {
             throw e;
@@ -282,13 +285,12 @@ public class CscClient {
         req.lang = lang;
         
         try {
-            String url = this.baseurl+"/csc/v1/info";
-            Request  request  = new Request.Builder().url(url).post(req.toRequestBody()).build();
-            Response response = client.newCall(request).execute();
+            String service = "/csc/v1/info";
+            Request.Builder  request  = new Request.Builder().post(req.toRequestBody());
+            Response response = sendRequest(request, service);
             
             return CscInfoResp.fromResponse(response, CscInfoResp.class);
         } catch (IOException e) {
-            e.printStackTrace();
             throw new CscException(e);
         } catch (CscException e) {
             throw e;
@@ -307,18 +309,16 @@ public class CscClient {
         req.maxResults = 20;
         
         try {
-            String url = this.baseurl+"/csc/v1/credentials/list";
-            Request  request  = new Request.Builder().url(url)
-                                                     .post(req.toRequestBody())
-                                                     .header("Authorization", "Bearer " + this.access_token)
-                                                     .build();
+            String service = "/csc/v1/credentials/list";
+            Request.Builder request = new Request.Builder()
+                    .post(req.toRequestBody())
+                    .header("Authorization", "Bearer " + this.access_token);
             
-            Response response = client.newCall(request).execute();
+            Response response = sendRequest(request, service);
             return CscCredentialsListResp.fromResponse(response, CscCredentialsListResp.class);
         } catch (CscException e) {
             throw e;
         } catch (Exception e) {
-            e.printStackTrace();
             throw new CscException(e);
         }
     }
@@ -345,16 +345,14 @@ public class CscClient {
         req.SAD          = authorize.SAD;
         
         try {
-            String url = this.baseurl+"/csc/v1/signatures/signHash";
-            Request  request  = new Request.Builder().url(url)
-                                                     .post(req.toRequestBody())
-                                                     .header("Authorization", "Bearer " + this.access_token)
-                                                     .build();
+            String service = "/csc/v1/signatures/signHash";
+            Request.Builder request = new Request.Builder()
+                    .post(req.toRequestBody())
+                    .header("Authorization", "Bearer " + this.access_token);
             
-            Response response = client.newCall(request).execute();
+            Response response = sendRequest(request, service);
             return CscSignHashResp.fromResponse(response, CscSignHashResp.class);
         } catch (IOException e) {
-            e.printStackTrace();
             throw new CscException(e);
         } catch (CscException e) {
             throw e;
@@ -391,38 +389,100 @@ public class CscClient {
         return this.signHash(credentialid, hash, signAlgo, null);
     }
     
+    /**
+     * Send a request to primary URL.
+     * If the request fails, and secondary is defined, retry to secondary URL.
+     * @param reqBuilder Request Builder
+     * @param service    Service part of the URL (e.g. /csc/v1/info)
+     * @return
+     * @throws IOException
+     */
+    private Response sendRequest(Request.Builder reqBuilder, String service) throws IOException {
+        try {
+            Request request   = reqBuilder.url(this.baseUrl+service).build();
+            Response response = client.newCall(request).execute();
+            return response;
+        } catch (IOException e) {
+            if (this.secondaryUrl != null) {
+                Request request   = reqBuilder.url(this.secondaryUrl+service).build();
+                Response response = client.newCall(request).execute();
+                return response;
+            }
+            throw e;
+        }
+    }
     
+    /**
+     * Builder for {@link CscClient}
+     */
     public static class Builder {
 
-        private String baseurl;
+        private String baseUrl;
+        private String secondaryUrl;
         private String username;
         private String password;
         private boolean trustall;
         
-        public CscClient build() {
-            return new CscClient(this.baseurl, this.username, this.password, this.trustall);
+        /**
+         * Build a new {@link CscClient}
+         * @return CSC client
+         * @throws CscException if client building fails (e.g. TLS init issues)
+         */
+        public CscClient build() throws CscException {
+            return new CscClient(this.baseUrl, this.secondaryUrl, this.username, this.password, this.trustall);
         }
         
-        public Builder withBaseUrl(String baseurl) {
-            this.baseurl = baseurl;
+        /**
+         * Set a primary CSC URL
+         * @param baseUrl
+         * @return this builder
+         */
+        public Builder withBaseUrl(String baseUrl) {
+            this.baseUrl = baseUrl;
             return this;
         }
         
+        /**
+         * Set a secondary CSC URL (used if primary fails)
+         * @param secondaryUrl
+         * @return this builder
+         */
+        public Builder withSecondaryUrl(String secondaryUrl) {
+            this.secondaryUrl = secondaryUrl;
+            return this;
+        }
+        
+        /**
+         * Set the CSC Password
+         * @param password
+         * @return this builder
+         */
         public Builder withPassword(String password) {
             this.password = password;
             return this;
         }
         
+        /**
+         * Trust unknown and self-signed server certificates.
+         * @param trust
+         * @return this builder
+         */
         public Builder withTrustInsecureConnections(boolean trust) {
             this.trustall = trust;
             return this;
         }
         
+        /**
+         * Set the CSC Username
+         * @param username
+         * @return this builder
+         */
         public Builder withUsername(String username) {
             this.username = username;
             return this;
         }
         
     }
+    
     
 }
