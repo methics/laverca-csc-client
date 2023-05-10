@@ -13,5 +13,12 @@ public class TestInfo {
         CscInfoResp resp = client.getInfo("EN");
         Assertions.assertNotNull(resp.name, "name");
     }
+
+    @Test
+    public void testInfoWithSecondaryUrl() {
+        CscClient client = new CscClient.Builder().withBaseUrl(TestAuth.INVALID_URL).withSecondaryUrl(TestAuth.BASE_URL).withTrustInsecureConnections(true).build();
+        CscInfoResp resp = client.getInfo("EN");
+        Assertions.assertNotNull(resp.name, "name");
+    }
     
 }
