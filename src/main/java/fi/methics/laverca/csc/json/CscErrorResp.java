@@ -3,7 +3,8 @@ package fi.methics.laverca.csc.json;
 import java.io.IOException;
 
 import com.google.gson.annotations.SerializedName;
-import com.squareup.okhttp.Response;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 /**
  * <pre>
@@ -23,8 +24,10 @@ public class CscErrorResp extends GsonMessage {
     
     public static CscErrorResp fromResponse(final Response response) throws IOException {
         if (response == null) return null;
-        String json = response.body().string();
-        return fromJson(json, CscErrorResp.class);
+        try (ResponseBody body = response.body()) {
+            String json = body.string();
+            return fromJson(json, CscErrorResp.class);
+        }
     }
     
 }

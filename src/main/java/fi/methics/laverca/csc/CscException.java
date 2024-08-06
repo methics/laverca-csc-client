@@ -1,6 +1,6 @@
 package fi.methics.laverca.csc;
 
-import com.squareup.okhttp.Response;
+import okhttp3.Response;
 
 import fi.methics.laverca.csc.json.CscErrorResp;
 
@@ -48,6 +48,7 @@ public class CscException extends RuntimeException {
     }
     
     public CscException(Exception e) {
+        super(e);
         this.error = new CscErrorResp();
         error.error = "server_error";
         error.error_description = "Request failed: " + e.getMessage();

@@ -7,10 +7,10 @@ import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
-import com.squareup.okhttp.Credentials;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
+import okhttp3.Credentials;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 import fi.methics.laverca.csc.json.auth.CscLoginReq;
 import fi.methics.laverca.csc.json.auth.CscLoginResp;
@@ -67,17 +67,10 @@ public class CscClient {
     private boolean isScal2 = false;
     
     protected CscClient(String baseUrl,
-                        String username, 
-                        String password,
-                        boolean trustall) 
-    {
-        this(baseUrl, null, username, password, trustall);
-    }
-    
-    protected CscClient(String baseUrl,
                         String secondaryUrl,
                         String username, 
                         String password,
+                        OkHttpClient client,
                         boolean trustall) 
     {
         this.baseUrl      = baseUrl;
@@ -85,20 +78,25 @@ public class CscClient {
         this.username     = username;
         this.password     = password;
         
-        this.client = new OkHttpClient();
-        this.client.setConnectTimeout(60, TimeUnit.SECONDS);
-        this.client.setReadTimeout(60,    TimeUnit.SECONDS);
-        this.client.setWriteTimeout(60,   TimeUnit.SECONDS);
-
-        if (trustall) {
-            try {
-                SSLContext sslContext = SSLContext.getInstance("SSL");
-                sslContext.init(null, new TrustManager[] { new AllTrustingTrustManager() }, new java.security.SecureRandom());
-                this.client.setSslSocketFactory(sslContext.getSocketFactory());
-                this.client.setHostnameVerifier(new AllTrustingHostnameVerifier());
-            } catch (Exception e) {
-                throw new CscException(e);
+        if (client == null) {
+            OkHttpClient.Builder builder = new OkHttpClient.Builder()
+                    .connectTimeout(60, TimeUnit.SECONDS)
+                    .writeTimeout(60, TimeUnit.SECONDS)
+                    .readTimeout(60, TimeUnit.SECONDS);
+    
+            if (trustall) {
+                try {
+                    SSLContext sslContext = SSLContext.getInstance("SSL");
+                    sslContext.init(null, new TrustManager[] { new AllTrustingTrustManager() }, new java.security.SecureRandom());
+                    builder.sslSocketFactory(sslContext.getSocketFactory(), new AllTrustingTrustManager());
+                    builder.hostnameVerifier(new AllTrustingHostnameVerifier());
+                } catch (Exception e) {
+                    throw new CscException(e);
+                }
             }
+            this.client = builder.build();
+        } else {
+            this.client = client;
         }
     }
     
@@ -115,8 +113,8 @@ public class CscClient {
                 .post(req.toRequestBody())
                 .header("Authorization", Credentials.basic(this.username, this.password));
         
-        try {
-            Response response = sendRequest(request, service);
+        try (Response response = sendRequest(request, service)) {
+            
             CscLoginResp loginresp = CscLoginResp.fromResponse(response, CscLoginResp.class);
             
             this.access_token  = loginresp.access_token;
@@ -143,9 +141,8 @@ public class CscClient {
         Request.Builder request = new Request.Builder()
                 .post(req.toRequestBody());
         
-        try {
+        try (Response response = sendRequest(request, service)){
             
-            Response response = sendRequest(request, service);
             CscLoginResp loginresp = CscLoginResp.fromResponse(response, CscLoginResp.class);
             
             this.access_token  = loginresp.access_token;
@@ -172,13 +169,13 @@ public class CscClient {
         req.token = this.access_token;
         req.token_type_hint = "access_token";
         
-        try {
-            String service = "/csc/v1/auth/revoke";
-            Request.Builder request = new Request.Builder()
-                    .post(req.toRequestBody())
-                    .header("Authorization", "Bearer " + this.access_token);
-            
-            Response response = sendRequest(request, service);
+        String service = "/csc/v1/auth/revoke";
+        Request.Builder request = new Request.Builder()
+                .post(req.toRequestBody())
+                .header("Authorization", "Bearer " + this.access_token);
+        
+        try (Response response = this.sendRequest(request, service)) {
+
             CscRevokeResp loginresp = CscRevokeResp.fromResponse(response, CscRevokeResp.class);
             
             this.access_token = null;
@@ -225,15 +222,17 @@ public class CscClient {
         req.numSignatures = hash != null ? hash.size() : 1;
         req.hash          = hash;
         
-        try {
-            String service = "/csc/v1/credentials/authorize";
-            Request.Builder request = new Request.Builder()
-                    .post(req.toRequestBody())
-                    .header("Authorization", "Bearer " + this.access_token);
-            
-            Response response = sendRequest(request, service);
+        String service = "/csc/v1/credentials/authorize";
+        Request.Builder request = new Request.Builder()
+                .post(req.toRequestBody())
+                .header("Authorization", "Bearer " + this.access_token);
+        
+        try (Response response = sendRequest(request, service)){
+
             CscCredentialsAuthorizeResp authorize = CscCredentialsAuthorizeResp.fromResponse(response, CscCredentialsAuthorizeResp.class);
+            
             this.authorize = authorize;
+            
             return authorize;
         } catch (IOException e) {
             throw new CscException(e);
@@ -254,13 +253,13 @@ public class CscClient {
         CscCredentialsInfoReq req = new CscCredentialsInfoReq();
         req.credentialID = credentialid;
         
-        try {
-            String service = "/csc/v1/credentials/info";
-            Request.Builder request = new Request.Builder()
-                    .post(req.toRequestBody())
-                    .header("Authorization", "Bearer " + this.access_token);
-            
-            Response response = sendRequest(request, service);
+        String service = "/csc/v1/credentials/info";
+        Request.Builder request = new Request.Builder()
+                .post(req.toRequestBody())
+                .header("Authorization", "Bearer " + this.access_token);
+        
+        try (Response response = sendRequest(request, service)){
+
             CscCredentialsInfoResp info = CscCredentialsInfoResp.fromResponse(response, CscCredentialsInfoResp.class);
             if ("2".equals(info.SCAL)) {
                 this.isScal2 = true;
@@ -284,11 +283,11 @@ public class CscClient {
         CscInfoReq req = new CscInfoReq();
         req.lang = lang;
         
-        try {
-            String service = "/csc/v1/info";
-            Request.Builder  request  = new Request.Builder().post(req.toRequestBody());
-            Response response = sendRequest(request, service);
-            
+        String service = "/csc/v1/info";
+        Request.Builder  request  = new Request.Builder().post(req.toRequestBody());
+        
+        try (Response response = sendRequest(request, service)){
+
             return CscInfoResp.fromResponse(response, CscInfoResp.class);
         } catch (IOException e) {
             throw new CscException(e);
@@ -308,13 +307,14 @@ public class CscClient {
         CscCredentialsListReq req = new CscCredentialsListReq();
         req.maxResults = 20;
         
-        try {
-            String service = "/csc/v1/credentials/list";
-            Request.Builder request = new Request.Builder()
-                    .post(req.toRequestBody())
-                    .header("Authorization", "Bearer " + this.access_token);
-            
-            Response response = sendRequest(request, service);
+        String service = "/csc/v1/credentials/list";
+        Request.Builder request = new Request.Builder()
+                .post(req.toRequestBody())
+                .header("Authorization", "Bearer " + this.access_token);
+        
+        
+        try (Response response = sendRequest(request, service)){
+
             return CscCredentialsListResp.fromResponse(response, CscCredentialsListResp.class);
         } catch (CscException e) {
             throw e;
@@ -344,13 +344,13 @@ public class CscClient {
         req.hashAlgo     = hashAlgo;
         req.SAD          = authorize.SAD;
         
-        try {
-            String service = "/csc/v1/signatures/signHash";
-            Request.Builder request = new Request.Builder()
-                    .post(req.toRequestBody())
-                    .header("Authorization", "Bearer " + this.access_token);
-            
-            Response response = sendRequest(request, service);
+        String service = "/csc/v1/signatures/signHash";
+        Request.Builder request = new Request.Builder()
+                .post(req.toRequestBody())
+                .header("Authorization", "Bearer " + this.access_token);
+        
+        try (Response response = sendRequest(request, service)){
+
             return CscSignHashResp.fromResponse(response, CscSignHashResp.class);
         } catch (IOException e) {
             throw new CscException(e);
@@ -398,14 +398,15 @@ public class CscClient {
      * @throws IOException
      */
     private Response sendRequest(Request.Builder reqBuilder, String service) throws IOException {
+        
         try {
             Request request   = reqBuilder.url(this.baseUrl+service).build();
-            Response response = client.newCall(request).execute();
+            Response response = this.client.newCall(request).execute();
             return response;
         } catch (IOException e) {
             if (this.secondaryUrl != null) {
                 Request request   = reqBuilder.url(this.secondaryUrl+service).build();
-                Response response = client.newCall(request).execute();
+                Response response = this.client.newCall(request).execute();
                 return response;
             }
             throw e;
@@ -422,6 +423,7 @@ public class CscClient {
         private String username;
         private String password;
         private boolean trustall;
+        private OkHttpClient client;
         
         /**
          * Build a new {@link CscClient}
@@ -429,7 +431,7 @@ public class CscClient {
          * @throws CscException if client building fails (e.g. TLS init issues)
          */
         public CscClient build() throws CscException {
-            return new CscClient(this.baseUrl, this.secondaryUrl, this.username, this.password, this.trustall);
+            return new CscClient(this.baseUrl, this.secondaryUrl, this.username, this.password, this.client, this.trustall);
         }
         
         /**
@@ -479,6 +481,16 @@ public class CscClient {
          */
         public Builder withUsername(String username) {
             this.username = username;
+            return this;
+        }
+        
+        /**
+         * Set OkHTTP client
+         * @param client
+         * @return this builder
+         */
+        public Builder withClient(OkHttpClient client) {
+            this.client = client;
             return this;
         }
         
