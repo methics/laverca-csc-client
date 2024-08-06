@@ -423,7 +423,6 @@ public class CscClient {
         private String username;
         private String password;
         private boolean trustall;
-        
         private OkHttpClient client;
         
         /**
